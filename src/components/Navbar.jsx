@@ -7,8 +7,12 @@ function Navbar() {
         Dashboard
       </Link>
 
-      <Link to="/devotees">
+      <Link to="/devotees" style={{ marginRight: "15px" }}>
         Devotees
+      </Link>
+
+      <Link to="/payments">
+        Payments
       </Link>
     </nav>
   )

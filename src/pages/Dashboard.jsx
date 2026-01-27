@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { onAuthStateChanged } from "firebase/auth"
-import { useLocation } from "react-router-dom"
-import { addDoc } from "firebase/firestore"
 import {
   collection,
   getDocs,
   doc,
   getDoc,
   setDoc,
+  addDoc,
 } from "firebase/firestore"
 
 import { Pie } from "react-chartjs-2"
@@ -70,6 +69,7 @@ const buttonStyle = {
 
 function Dashboard() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   /* ===== STATE ===== */
   const [userRole, setUserRole] = useState(null)
@@ -79,7 +79,6 @@ function Dashboard() {
   const [totalExpected, setTotalExpected] = useState(0)
   const [totalCollected, setTotalCollected] = useState(0)
   const [totalPending, setTotalPending] = useState(0)
-  const location = useLocation()
 
   /* ===== AUTH + ROLE ===== */
   useEffect(() => {
@@ -96,7 +95,7 @@ function Dashboard() {
     return () => unsub()
   }, [navigate])
 
-  /* ===== LOAD DATA ===== */
+  /* ===== LOAD DASHBOARD ===== */
   const loadDashboard = async () => {
     const devoteesSnap = await getDocs(collection(db, "devotees"))
     const devotees = devoteesSnap.docs
@@ -127,8 +126,14 @@ function Dashboard() {
     setPaidList(paid)
     setUnpaidList(unpaid)
 
-    const expected = devotees.reduce((s, d) => s + Number(d.sevaAmount || 0), 0)
-    const collected = paid.reduce((s, d) => s + Number(d.sevaAmount || 0), 0)
+    const expected = devotees.reduce(
+      (s, d) => s + Number(d.sevaAmount || 0),
+      0
+    )
+    const collected = paid.reduce(
+      (s, d) => s + Number(d.sevaAmount || 0),
+      0
+    )
 
     setTotalExpected(expected)
     setTotalCollected(collected)
@@ -143,7 +148,7 @@ function Dashboard() {
     if (userRole) {
       loadDashboard()
     }
-  }, [selectedMonth, userRole, location.pathname])  
+  }, [userRole, selectedMonth])
 
   /* ===== ACTIONS ===== */
   const handleMarkPaid = async (id, mode) => {
@@ -160,27 +165,24 @@ function Dashboard() {
 
     await setDoc(ref, { payments })
 
-await addDoc(collection(db, "paymentHistory"), {
-  devoteeId: id,
-  devoteeName:
-    unpaidList.find(d => d.id === id)?.name ||
-    paidList.find(d => d.id === id)?.name ||
-    "",
-  amount:
-    unpaidList.find(d => d.id === id)?.sevaAmount ||
-    paidList.find(d => d.id === id)?.sevaAmount ||
-    0,
-  mode,
-  month: selectedMonth,
-  markedBy: auth.currentUser.uid,
-  markedAt: new Date(),
-})
+    await addDoc(collection(db, "paymentHistory"), {
+      devoteeId: id,
+      devoteeName:
+        unpaidList.find(d => d.id === id)?.name ||
+        paidList.find(d => d.id === id)?.name ||
+        "",
+      amount:
+        unpaidList.find(d => d.id === id)?.sevaAmount ||
+        paidList.find(d => d.id === id)?.sevaAmount ||
+        0,
+      mode,
+      month: selectedMonth,
+      markedBy: auth.currentUser.uid,
+      markedAt: new Date(),
+    })
 
-loadDashboard()
-
+    loadDashboard()
   }
-     
-     
 
   const handleMarkUnpaid = async (id) => {
     const ref = doc(db, "sevaRecords", selectedMonth)
@@ -213,6 +215,7 @@ loadDashboard()
     <div style={{ padding: 20, maxWidth: 1200, margin: "auto" }}>
       <Navbar />
 
+      {/* HEADER */}
       <div style={sectionStyle}>
         <input
           type="month"
@@ -222,22 +225,22 @@ loadDashboard()
         <h2>Seva Dashboard</h2>
         <p>Monthly Nitya Seva • {selectedMonth}</p>
       </div>
-      
+
+      {/* CHART */}
       <div style={sectionStyle}>
-  <h3>Seva Collection Overview</h3>
+        <h3>Seva Collection Overview</h3>
+        {(totalCollected > 0 || totalPending > 0) ? (
+          <div style={{ maxWidth: 400, margin: "auto" }}>
+            <Pie data={chartData} />
+          </div>
+        ) : (
+          <p style={{ textAlign: "center", color: "#666" }}>
+            No data available for this month
+          </p>
+        )}
+      </div>
 
-  {(totalCollected > 0 || totalPending > 0) ? (
-    <div style={{ maxWidth: "400px", margin: "auto" }}>
-      <Pie data={chartData} />
-    </div>
-  ) : (
-    <p style={{ textAlign: "center", color: "#666" }}>
-      No data available for this month
-    </p>
-  )}
-</div>
-
-
+      {/* SUMMARY */}
       <div style={sectionStyle}>
         <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
           <div style={cardStyle}>₹{totalExpected}<br />Expected</div>
@@ -246,7 +249,7 @@ loadDashboard()
         </div>
       </div>
 
-      {/* ===== PENDING ===== */}
+      {/* PENDING */}
       <div style={sectionStyle}>
         <h3>Pending Devotees</h3>
 
@@ -290,7 +293,7 @@ loadDashboard()
         )}
       </div>
 
-      {/* ===== PAID ===== */}
+      {/* PAID */}
       <div style={sectionStyle}>
         <h3>Paid Devotees</h3>
 
