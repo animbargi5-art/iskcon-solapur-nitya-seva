@@ -1,83 +1,70 @@
-import { updateDoc, doc } from "firebase/firestore"
 import { useState, useEffect } from "react"
-import { collection, addDoc, getDocs } from "firebase/firestore"
+import {
+  collection,
+  addDoc,
+  getDocs,
+  updateDoc,
+  doc,
+} from "firebase/firestore"
 import { db } from "../services/firebase"
 
 function Devotees() {
-  // ===== FORM STATES =====
-
-  const handleDeactivate = async (id) => {
-    await updateDoc(doc(db, "devotees", id), {
-      active: false,
-    })
-    fetchDevotees()
-  }
-  
-  const handleActivate = async (id) => {
-    await updateDoc(doc(db, "devotees", id), {
-      active: true,
-    })
-    fetchDevotees()
-  }
-  
+  /* ===== FORM STATE ===== */
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
   const [whatsapp, setWhatsapp] = useState("")
   const [sevaAmount, setSevaAmount] = useState("")
   const [birthday, setBirthday] = useState("")
   const [anniversary, setAnniversary] = useState("")
-  const [loading, setLoading] = useState(false)
   const [editingId, setEditingId] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState("")
 
-
-  // ===== DEVOTEE LIST STATE =====
+  /* ===== LIST STATE ===== */
   const [devoteeList, setDevoteeList] = useState([])
 
-  // ===== ADD DEVOTEE =====
-  const handleEdit = (devotee) => {
-    setEditingId(devotee.id)
-    setName(devotee.name)
-    setPhone(devotee.phone)
-    setWhatsapp(devotee.whatsapp)
-    setSevaAmount(devotee.sevaAmount)
-    setBirthday(devotee.birthday)
-    setAnniversary(devotee.anniversary)
+  /* ===== FETCH DEVOTEES ===== */
+  const fetchDevotees = async () => {
+    const snap = await getDocs(collection(db, "devotees"))
+    const list = snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }))
+    setDevoteeList(list)
   }
-  
-  const handleAddDevotee = async (e) => {
+
+  useEffect(() => {
+    fetchDevotees()
+  }, [])
+
+  /* ===== ADD / UPDATE DEVOTEE ===== */
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-  
+
     try {
       if (editingId) {
-        // UPDATE MODE
         await updateDoc(doc(db, "devotees", editingId), {
-          name: name.trim(),
-          phone: phone.trim(),
-          whatsapp: whatsapp.trim(),
+          name,
+          phone,
+          whatsapp,
           sevaAmount: Number(sevaAmount),
           birthday,
           anniversary,
         })
-  
-        alert("Devotee updated successfully ✏️")
       } else {
-        // ADD MODE
         await addDoc(collection(db, "devotees"), {
-          name: name.trim(),
-          phone: phone.trim(),
-          whatsapp: whatsapp.trim(),
+          name,
+          phone,
+          whatsapp,
           sevaAmount: Number(sevaAmount),
           birthday,
           anniversary,
           active: true,
           createdAt: new Date(),
         })
-  
-        alert("Devotee added successfully 🙏")
       }
-  
-      // Reset form
+
       setEditingId(null)
       setName("")
       setPhone("")
@@ -85,148 +72,104 @@ function Devotees() {
       setSevaAmount("")
       setBirthday("")
       setAnniversary("")
-  
       fetchDevotees()
-    } catch (error) {
-      console.error(error)
-      alert("Error saving devotee ❌")
+    } catch (err) {
+      console.error(err)
     }
-  
+
     setLoading(false)
   }
-  
 
-  // ===== FETCH DEVOTEES =====
-  const fetchDevotees = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, "devotees"))
-      const list = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
-      setDevoteeList(list.filter((d) => d.active))
-    } catch (error) {
-      console.error("Error fetching devotees", error)
-    }
+  /* ===== EDIT ===== */
+  const handleEdit = (d) => {
+    setEditingId(d.id)
+    setName(d.name)
+    setPhone(d.phone)
+    setWhatsapp(d.whatsapp)
+    setSevaAmount(d.sevaAmount)
+    setBirthday(d.birthday || "")
+    setAnniversary(d.anniversary || "")
   }
 
-  // ===== LOAD DEVOTEES ON PAGE LOAD =====
-  useEffect(() => {
+  /* ===== ACTIVATE / DEACTIVATE ===== */
+  const setActiveStatus = async (id, active) => {
+    await updateDoc(doc(db, "devotees", id), { active })
     fetchDevotees()
-  }, [])
+  }
+
+  /* ===== FILTER ===== */
+  const filteredList = devoteeList.filter(
+    (d) =>
+      d.name.toLowerCase().includes(search.toLowerCase()) ||
+      d.phone.includes(search)
+  )
 
   return (
-    <div>
+    <div style={{ padding: "20px" }}>
       <h2>Devotee Management</h2>
 
-      {/* ===== ADD DEVOTEE FORM ===== */}
-      <form onSubmit={handleAddDevotee}>
-        <div>
-          <label>Name</label><br />
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-          />
-        </div>
-
-        <br />
-
-        <div>
-          <label>Phone Number</label><br />
-          <input
-            type="text"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
-        </div>
-
-        <br />
-
-        <div>
-          <label>WhatsApp Number</label><br />
-          <input
-            type="text"
-            value={whatsapp}
-            onChange={(e) => setWhatsapp(e.target.value)}
-            required
-          />
-        </div>
-
-        <br />
-
-        <div>
-          <label>Monthly Seva Amount (₹)</label><br />
-          <input
-            type="number"
-            value={sevaAmount}
-            onChange={(e) => setSevaAmount(e.target.value)}
-            required
-          />
-        </div>
-
-        <br />
-
-        <div>
-          <label>Birthday</label><br />
-          <input
-            type="date"
-            value={birthday}
-            onChange={(e) => setBirthday(e.target.value)}
-          />
-        </div>
-
-        <br />
-
-        <div>
-          <label>Anniversary</label><br />
-          <input
-            type="date"
-            value={anniversary}
-            onChange={(e) => setAnniversary(e.target.value)}
-          />
-        </div>
-
-        <br />
+      {/* ===== FORM ===== */}
+      <form onSubmit={handleSubmit}>
+        <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <br /><br />
+        <input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} required />
+        <br /><br />
+        <input placeholder="WhatsApp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+        <br /><br />
+        <input type="number" placeholder="Seva Amount" value={sevaAmount} onChange={(e) => setSevaAmount(e.target.value)} required />
+        <br /><br />
+        <input type="date" value={birthday} onChange={(e) => setBirthday(e.target.value)} />
+        <br /><br />
+        <input type="date" value={anniversary} onChange={(e) => setAnniversary(e.target.value)} />
+        <br /><br />
 
         <button type="submit" disabled={loading}>
-  {loading
-    ? "Saving..."
-    : editingId
-    ? "Update Devotee"
-    : "Add Devotee"}
-</button>
-
+          {editingId ? "Update Devotee" : "Add Devotee"}
+        </button>
       </form>
 
       <hr />
 
-      {/* ===== DEVOTEE LIST ===== */}
-      <h3>Devotee List</h3>
+      {/* ===== SEARCH ===== */}
+      <input
+        type="text"
+        placeholder="Search by name or phone"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+      />
 
-      {devoteeList.length === 0 ? (
-        <p>No devotees added yet.</p>
-      ) : (
-        <ul>
-          {devoteeList.map((devotee) => (
-  <li key={devotee.id}>
-    <strong>{devotee.name}</strong> — ₹{devotee.sevaAmount}{" "}
-    <button onClick={() => handleEdit(devotee)}>Edit</button>{" "}
-    {devotee.active ? (
-      <button onClick={() => handleDeactivate(devotee.id)}>
-        Deactivate
-      </button>
-    ) : (
-      <button onClick={() => handleActivate(devotee.id)}>
-        Activate
-      </button>
-    )}
-  </li>
-))}
-        </ul>
-      )}
+      {/* ===== TABLE ===== */}
+      <table border="1" width="100%" cellPadding="10">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Seva ₹</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {filteredList.map((d) => (
+            <tr key={d.id}>
+              <td>{d.name}</td>
+              <td>{d.phone}</td>
+              <td>₹{d.sevaAmount}</td>
+              <td>{d.active ? "Active" : "Inactive"}</td>
+              <td>
+                <button onClick={() => handleEdit(d)}>Edit</button>{" "}
+                {d.active ? (
+                  <button onClick={() => setActiveStatus(d.id, false)}>Deactivate</button>
+                ) : (
+                  <button onClick={() => setActiveStatus(d.id, true)}>Activate</button>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
