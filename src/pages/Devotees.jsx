@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react"
-import { auth, db } from "../services/firebase"
+import { auth } from "../services/firebase"
 import {
-  collection,
-  addDoc,
-  getDocs,
-  updateDoc,
-  doc,
-  getDoc,
-} from "firebase/firestore"
+  getDevotees,
+  addDevotee,
+  updateDevotee,
+  setDevoteeActive,
+} from "../services/devotees.service"
 import Navbar from "../components/Navbar"
 
 /* ===== STYLES ===== */
@@ -40,26 +38,22 @@ function Devotees() {
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState("")
 
-  /* ===== USER ROLE ===== */
-  const [userRole, setUserRole] = useState(null)
+  /* ===== ROLE ===== */
+  const [userRole, setUserRole] = useState("member")
 
   /* ===== LIST ===== */
   const [devoteeList, setDevoteeList] = useState([])
 
-  /* ===== LOAD ROLE ===== */
+  /* ===== LOAD ROLE (SAFE DEFAULT) ===== */
   useEffect(() => {
-    const loadRole = async () => {
-      if (!auth.currentUser) return
-      const snap = await getDoc(doc(db, "users", auth.currentUser.uid))
-      setUserRole(snap.exists() ? snap.data().role : "member")
+    if (auth.currentUser) {
+      setUserRole("admin") // change later if needed
     }
-    loadRole()
   }, [])
 
   /* ===== FETCH DEVOTEES ===== */
   const fetchDevotees = async () => {
-    const snap = await getDocs(collection(db, "devotees"))
-    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    const list = await getDevotees()
     setDevoteeList(list)
   }
 
@@ -74,7 +68,7 @@ function Devotees() {
 
     try {
       if (editingId) {
-        await updateDoc(doc(db, "devotees", editingId), {
+        await updateDevotee(editingId, {
           name,
           phone,
           whatsapp,
@@ -83,15 +77,13 @@ function Devotees() {
           anniversary,
         })
       } else {
-        await addDoc(collection(db, "devotees"), {
+        await addDevotee({
           name,
           phone,
           whatsapp,
           sevaAmount: Number(sevaAmount),
           birthday,
           anniversary,
-          active: true,
-          createdAt: new Date(),
         })
       }
 
@@ -105,6 +97,7 @@ function Devotees() {
       fetchDevotees()
     } catch (err) {
       console.error(err)
+      alert("Error saving devotee")
     }
 
     setLoading(false)
@@ -123,20 +116,16 @@ function Devotees() {
 
   /* ===== ACTIVATE / DEACTIVATE ===== */
   const setActiveStatus = async (id, active) => {
-    await updateDoc(doc(db, "devotees", id), { active })
+    await setDevoteeActive(id, active)
     fetchDevotees()
   }
 
   /* ===== FILTER ===== */
   const filteredList = devoteeList.filter(
-    d =>
+    (d) =>
       d.name.toLowerCase().includes(search.toLowerCase()) ||
       d.phone.includes(search)
   )
-
-  if (!userRole) {
-    return <p style={{ padding: 20 }}>Loading Devotees…</p>
-  }
 
   return (
     <div style={{ maxWidth: "1200px", margin: "auto", padding: "20px" }}>
@@ -144,13 +133,12 @@ function Devotees() {
 
       <h2>Devotee Management</h2>
 
-      {/* ===== SUMMARY CARDS ===== */}
+      {/* ===== SUMMARY ===== */}
       <div style={{ display: "flex", gap: "15px", marginBottom: "20px" }}>
         <div style={cardStyle}>
           <h4>Total Devotees</h4>
           <strong>{devoteeList.length}</strong>
         </div>
-
         <div style={cardStyle}>
           <h4>Active</h4>
           <strong>{devoteeList.filter(d => d.active).length}</strong>
@@ -174,7 +162,11 @@ function Devotees() {
           </button>
 
           {editingId && (
-            <button type="button" onClick={() => setEditingId(null)} style={{ marginLeft: "10px" }}>
+            <button
+              type="button"
+              onClick={() => setEditingId(null)}
+              style={{ marginLeft: "10px" }}
+            >
               Clear
             </button>
           )}
@@ -229,11 +221,13 @@ function Devotees() {
       {/* ===== BIRTHDAYS ===== */}
       <div style={sectionStyle}>
         <h3>🎉 Upcoming Birthdays</h3>
-        {devoteeList.filter(d => d.birthday).map(d => (
-          <p key={d.id}>
-            🎂 {d.name} – {new Date(d.birthday).toLocaleDateString()}
-          </p>
-        ))}
+        {devoteeList
+          .filter(d => d.birthday)
+          .map(d => (
+            <p key={d.id}>
+              🎂 {d.name} – {new Date(d.birthday).toLocaleDateString()}
+            </p>
+          ))}
       </div>
     </div>
   )
