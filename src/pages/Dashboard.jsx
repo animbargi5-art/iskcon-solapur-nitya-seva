@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { onAuthStateChanged } from "firebase/auth"
 import { useLocation } from "react-router-dom"
+import { addDoc } from "firebase/firestore"
 import {
   collection,
   getDocs,
@@ -158,8 +159,28 @@ function Dashboard() {
     }
 
     await setDoc(ref, { payments })
-    loadDashboard()
+
+await addDoc(collection(db, "paymentHistory"), {
+  devoteeId: id,
+  devoteeName:
+    unpaidList.find(d => d.id === id)?.name ||
+    paidList.find(d => d.id === id)?.name ||
+    "",
+  amount:
+    unpaidList.find(d => d.id === id)?.sevaAmount ||
+    paidList.find(d => d.id === id)?.sevaAmount ||
+    0,
+  mode,
+  month: selectedMonth,
+  markedBy: auth.currentUser.uid,
+  markedAt: new Date(),
+})
+
+loadDashboard()
+
   }
+     
+     
 
   const handleMarkUnpaid = async (id) => {
     const ref = doc(db, "sevaRecords", selectedMonth)

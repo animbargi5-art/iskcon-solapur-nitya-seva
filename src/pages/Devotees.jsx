@@ -1,3 +1,4 @@
+import { auth } from "../services/firebase"
 import { useState, useEffect } from "react"
 import {
   collection,
@@ -19,7 +20,7 @@ function Devotees() {
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState("")
-
+  const [userRole, setUserRole] = useState(null)
   /* ===== LIST STATE ===== */
   const [devoteeList, setDevoteeList] = useState([])
 
@@ -34,8 +35,12 @@ function Devotees() {
   }
 
   useEffect(() => {
-    fetchDevotees()
-  }, [])
+    const loadRole = async () => {
+      const snap = await getDoc(doc(db, "users", auth.currentUser.uid))
+      setUserRole(snap.exists() ? snap.data().role : "member")
+    }
+    loadRole()
+  }, [])  
 
   /* ===== ADD / UPDATE DEVOTEE ===== */
   const handleSubmit = async (e) => {
@@ -159,7 +164,10 @@ function Devotees() {
               <td>₹{d.sevaAmount}</td>
               <td>{d.active ? "Active" : "Inactive"}</td>
               <td>
-                <button onClick={() => handleEdit(d)}>Edit</button>{" "}
+              {userRole === "admin" && (
+  <button onClick={() => handleEdit(devotee)}>Edit</button>
+)}
+{" "}
                 {d.active ? (
                   <button onClick={() => setActiveStatus(d.id, false)}>Deactivate</button>
                 ) : (
