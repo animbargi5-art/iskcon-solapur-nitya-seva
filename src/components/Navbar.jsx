@@ -1,43 +1,56 @@
-import { Link, useNavigate } from "react-router-dom"
-import { signOut } from "firebase/auth"
-import { auth } from "../services/firebase"
+import { Link, useLocation } from "react-router-dom"
+import "../styles/navbar.css"
 
 function Navbar() {
-  const navigate = useNavigate()
-
-  const handleLogout = async () => {
-    await signOut(auth)
-    navigate("/")
-  }
+  const location = useLocation()
 
   return (
-    <nav
-      style={{
-        padding: "12px 20px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        borderBottom: "1px solid #ddd",
-        background: "#fff",
-      }}
-    >
-      <div>
-        <Link to="/dashboard" style={{ marginRight: "15px" }}>
+    <nav className="navbar">
+      {/* LEFT: LOGO */}
+      <div className="navbar-left">
+  <div className="logo-wrap">
+    <img
+      src="/ISKCON.png"
+      alt="ISKCON"
+      className="navbar-logo"
+    />
+  </div>
+
+  <div>
+    <h3 className="navbar-title">ISKCON Solapur</h3>
+    <small className="navbar-subtitle">Nitya Seva Portal</small>
+  </div>
+</div>
+
+
+      {/* CENTER: LINKS */}
+      <div className="navbar-links">
+        <Link
+          to="/dashboard"
+          className={location.pathname === "/dashboard" ? "active" : ""}
+        >
           Dashboard
         </Link>
 
-        <Link to="/devotees" style={{ marginRight: "15px" }}>
+        <Link
+          to="/devotees"
+          className={location.pathname === "/devotees" ? "active" : ""}
+        >
           Devotees
         </Link>
 
-        <Link to="/payments">
+        <Link
+          to="/payments"
+          className={location.pathname === "/payments" ? "active" : ""}
+        >
           Payments
         </Link>
       </div>
 
-      <button onClick={handleLogout}>
-        Logout
-      </button>
+      {/* RIGHT: QUOTE */}
+      <div className="navbar-quote">
+        “Seva is the highest perfection”
+      </div>
     </nav>
   )
 }

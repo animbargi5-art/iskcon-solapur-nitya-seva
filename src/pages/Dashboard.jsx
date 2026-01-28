@@ -1,5 +1,8 @@
+import "../styles/dashboard.css"
+import * as XLSX from "xlsx"
+import { saveAs } from "file-saver"
 import { useEffect, useState } from "react"
-import { useNavigate, useLocation } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { onAuthStateChanged } from "firebase/auth"
 import {
   collection,
@@ -10,18 +13,31 @@ import {
   addDoc,
 } from "firebase/firestore"
 
-import { Pie } from "react-chartjs-2"
+import { Pie, Line } from "react-chartjs-2"
 import {
   Chart as ChartJS,
   ArcElement,
   Tooltip,
   Legend,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement,
 } from "chart.js"
 
 import { auth, db } from "../services/firebase"
 import Navbar from "../components/Navbar"
 
-ChartJS.register(ArcElement, Tooltip, Legend)
+/* ===== REGISTER CHARTS ===== */
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  LineElement,
+  CategoryScale,
+  LinearScale,
+  PointElement
+)
 
 /* ===== HELPERS ===== */
 const getCurrentMonthKey = () => {
@@ -29,69 +45,46 @@ const getCurrentMonthKey = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
 }
 
-/* ===== STYLES ===== */
-const cardStyle = {
-  flex: 1,
-  minWidth: "240px",
-  padding: "20px",
-  borderRadius: "10px",
-  background: "#f5f7fa",
-  textAlign: "center",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-}
-
-const sectionStyle = {
-  background: "#fff",
-  padding: "20px",
-  borderRadius: "12px",
-  marginBottom: "25px",
-  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-}
-
-const tableStyle = {
-  width: "100%",
-  borderCollapse: "collapse",
-}
-
-const thTdStyle = {
-  border: "1px solid #ddd",
-  padding: "10px",
-}
-
-const buttonStyle = {
-  padding: "8px 14px",
-  borderRadius: "6px",
-  border: "none",
-  cursor: "pointer",
-  background: "#1976d2",
-  color: "#fff",
+const getLastMonths = (count = 6) => {
+  const months = []
+  const date = new Date()
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(date.getFullYear(), date.getMonth() - i, 1)
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`)
+  }
+  return months
 }
 
 function Dashboard() {
   const navigate = useNavigate()
-  const location = useLocation()
 
   /* ===== STATE ===== */
   const [userRole, setUserRole] = useState(null)
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthKey())
+
   const [paidList, setPaidList] = useState([])
   const [unpaidList, setUnpaidList] = useState([])
+
   const [totalExpected, setTotalExpected] = useState(0)
   const [totalCollected, setTotalCollected] = useState(0)
   const [totalPending, setTotalPending] = useState(0)
 
-  /* ===== AUTH + ROLE ===== */
+  const [monthlyStats, setMonthlyStats] = useState([])
+  const [paymentSplit, setPaymentSplit] = useState({ online: 0, cash: 0 })
+  const [topDevotees, setTopDevotees] = useState([])
+
+  const [paidFilter, setPaidFilter] = useState("all")
+  const [paidSearch, setPaidSearch] = useState("")
+  const [devoteeSearch, setDevoteeSearch] = useState("")
+  const [minAmount, setMinAmount] = useState("")
+
+  /* ===== AUTH ===== */
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        navigate("/")
-        return
-      }
-
+      if (!user) return navigate("/")
       const snap = await getDoc(doc(db, "users", user.uid))
       setUserRole(snap.exists() ? snap.data().role : "member")
     })
-
     return () => unsub()
   }, [navigate])
 
@@ -104,20 +97,14 @@ function Dashboard() {
 
     const recordRef = doc(db, "sevaRecords", selectedMonth)
     const recordSnap = await getDoc(recordRef)
-
-    const payments = recordSnap.exists()
-      ? recordSnap.data().payments || {}
-      : {}
+    const payments = recordSnap.exists() ? recordSnap.data().payments || {} : {}
 
     const paid = []
     const unpaid = []
 
     devotees.forEach(d => {
       if (payments[d.id]?.status === "paid") {
-        paid.push({
-          ...d,
-          paymentMode: payments[d.id].mode || "online",
-        })
+        paid.push({ ...d, paymentMode: payments[d.id].mode })
       } else {
         unpaid.push(d)
       }
@@ -126,205 +113,165 @@ function Dashboard() {
     setPaidList(paid)
     setUnpaidList(unpaid)
 
-    const expected = devotees.reduce(
-      (s, d) => s + Number(d.sevaAmount || 0),
-      0
-    )
-    const collected = paid.reduce(
-      (s, d) => s + Number(d.sevaAmount || 0),
-      0
-    )
+    const expected = devotees.reduce((s, d) => s + Number(d.sevaAmount || 0), 0)
+    const collected = paid.reduce((s, d) => s + Number(d.sevaAmount || 0), 0)
 
     setTotalExpected(expected)
     setTotalCollected(collected)
     setTotalPending(expected - collected)
+
+    setTopDevotees([...paid].sort((a, b) => b.sevaAmount - a.sevaAmount).slice(0, 5))
 
     if (!recordSnap.exists()) {
       await setDoc(recordRef, { payments: {} })
     }
   }
 
+  /* ===== ANALYTICS ===== */
+  const loadAnalytics = async () => {
+    const months = getLastMonths(6)
+    const stats = []
+    let online = 0
+    let cash = 0
+
+    for (const month of months) {
+      const snap = await getDoc(doc(db, "sevaRecords", month))
+      const payments = snap.exists() ? snap.data().payments || {} : {}
+      let total = 0
+
+      Object.values(payments).forEach(p => {
+        if (p.status === "paid") {
+          total++
+          if (p.mode === "online") online++
+          if (p.mode === "cash") cash++
+        }
+      })
+
+      stats.push({ month, total })
+    }
+
+    setMonthlyStats(stats)
+    setPaymentSplit({ online, cash })
+  }
+
   useEffect(() => {
     if (userRole) {
       loadDashboard()
+      loadAnalytics()
     }
   }, [userRole, selectedMonth])
 
   /* ===== ACTIONS ===== */
-  const handleMarkPaid = async (id, mode) => {
+  const markPaid = async (id, mode) => {
     const ref = doc(db, "sevaRecords", selectedMonth)
     const snap = await getDoc(ref)
     const payments = snap.exists() ? snap.data().payments || {} : {}
 
-    payments[id] = {
-      status: "paid",
-      mode,
-      markedBy: auth.currentUser.uid,
-      markedAt: new Date().toISOString(),
-    }
-
+    payments[id] = { status: "paid", mode, markedAt: new Date().toISOString() }
     await setDoc(ref, { payments })
 
     await addDoc(collection(db, "paymentHistory"), {
       devoteeId: id,
-      devoteeName:
-        unpaidList.find(d => d.id === id)?.name ||
-        paidList.find(d => d.id === id)?.name ||
-        "",
-      amount:
-        unpaidList.find(d => d.id === id)?.sevaAmount ||
-        paidList.find(d => d.id === id)?.sevaAmount ||
-        0,
+      devoteeName: unpaidList.find(d => d.id === id)?.name,
+      amount: unpaidList.find(d => d.id === id)?.sevaAmount,
       mode,
       month: selectedMonth,
-      markedBy: auth.currentUser.uid,
       markedAt: new Date(),
     })
 
     loadDashboard()
+    loadAnalytics()
   }
 
-  const handleMarkUnpaid = async (id) => {
+  const markUnpaid = async (id) => {
     const ref = doc(db, "sevaRecords", selectedMonth)
     const snap = await getDoc(ref)
     if (!snap.exists()) return
-
     const payments = snap.data().payments || {}
     delete payments[id]
-
     await setDoc(ref, { payments })
     loadDashboard()
+    loadAnalytics()
   }
 
-  const chartData = {
+  /* ===== EXPORT ===== */
+  const exportPaidToExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(
+      paidList.map(d => ({
+        Name: d.name,
+        Amount: d.sevaAmount,
+        Mode: d.paymentMode,
+        Month: selectedMonth,
+      }))
+    )
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Paid Devotees")
+    const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" })
+    saveAs(new Blob([buffer]), `Paid_${selectedMonth}.xlsx`)
+  }
+
+  if (!userRole) return <p>Loading…</p>
+
+  /* ===== CHART DATA ===== */
+  const pieData = {
     labels: ["Collected", "Pending"],
-    datasets: [
-      {
-        data: [totalCollected, totalPending],
-        backgroundColor: ["#4caf50", "#f44336"],
-      },
-    ],
+    datasets: [{ data: [totalCollected, totalPending], backgroundColor: ["#4caf50", "#f44336"] }],
   }
 
-  if (!userRole) {
-    return <p style={{ padding: 20 }}>Loading dashboard…</p>
+  const lineData = {
+    labels: monthlyStats.map(m => m.month),
+    datasets: [{
+      label: "Paid Devotees",
+      data: monthlyStats.map(m => m.total),
+      borderColor: "#bf360c",
+      backgroundColor: "rgba(191,54,12,0.15)",
+      fill: true,
+      tension: 0.4,
+    }],
   }
 
-  /* ===== UI ===== */
   return (
-    <div style={{ padding: 20, maxWidth: 1200, margin: "auto" }}>
+    <div className="dashboard-bg">
       <Navbar />
 
-      {/* HEADER */}
-      <div style={sectionStyle}>
-        <input
-          type="month"
-          value={selectedMonth}
-          onChange={e => setSelectedMonth(e.target.value)}
-        />
-        <h2>Seva Dashboard</h2>
-        <p>Monthly Nitya Seva • {selectedMonth}</p>
+      <div className="section header">
+        <h1>Hare Krishna 🙏</h1>
+        <p>Nitya Seva Dashboard • {selectedMonth}</p>
+        <small>“Everything belongs to Krishna” — Srila Prabhupada</small>
       </div>
 
-      {/* CHART */}
-      <div style={sectionStyle}>
-        <h3>Seva Collection Overview</h3>
-        {(totalCollected > 0 || totalPending > 0) ? (
-          <div style={{ maxWidth: 400, margin: "auto" }}>
-            <Pie data={chartData} />
-          </div>
-        ) : (
-          <p style={{ textAlign: "center", color: "#666" }}>
-            No data available for this month
-          </p>
-        )}
-      </div>
+      <div className="section"><Pie data={pieData} /></div>
+      <div className="section"><Line data={lineData} /></div>
 
       {/* SUMMARY */}
-      <div style={sectionStyle}>
-        <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-          <div style={cardStyle}>₹{totalExpected}<br />Expected</div>
-          <div style={cardStyle}>₹{totalCollected}<br />Collected</div>
-          <div style={cardStyle}>₹{totalPending}<br />Pending</div>
-        </div>
+      <div className="cards">
+        <div className="card expected">₹{totalExpected}<br />Expected</div>
+        <div className="card collected">₹{totalCollected}<br />Collected</div>
+        <div className="card pending">₹{totalPending}<br />Pending</div>
       </div>
 
-      {/* PENDING */}
-      <div style={sectionStyle}>
-        <h3>Pending Devotees</h3>
+      {/* PAID TABLE */}
+      <div className="table-wrap">
+        <h3>✅ Paid Devotees</h3>
+        <button className="btn" onClick={exportPaidToExcel}>Export Excel</button>
 
-        {unpaidList.length === 0 ? (
-          <p>All devotees have paid 🙏</p>
-        ) : (
-          <table style={tableStyle}>
-            <thead>
-              <tr>
-                <th style={thTdStyle}>Name</th>
-                <th style={thTdStyle}>Amount</th>
-                <th style={thTdStyle}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {unpaidList.map(d => (
-                <tr key={d.id}>
-                  <td style={thTdStyle}>{d.name}</td>
-                  <td style={thTdStyle}>₹{d.sevaAmount}</td>
-                  <td style={thTdStyle}>
-                    <button
-                      style={buttonStyle}
-                      onClick={() => handleMarkPaid(d.id, "online")}
-                    >
-                      Paid (Online)
-                    </button>
-
-                    {userRole === "admin" && (
-                      <button
-                        style={{ ...buttonStyle, background: "#2e7d32", marginLeft: 8 }}
-                        onClick={() => handleMarkPaid(d.id, "cash")}
-                      >
-                        Paid (Cash)
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* PAID */}
-      <div style={sectionStyle}>
-        <h3>Paid Devotees</h3>
-
-        <table style={tableStyle}>
+        <table className="table">
           <thead>
-            <tr>
-              <th style={thTdStyle}>Name</th>
-              <th style={thTdStyle}>Amount</th>
-              <th style={thTdStyle}>Mode</th>
-              <th style={thTdStyle}>Action</th>
-            </tr>
+            <tr><th>Name</th><th>Amount</th><th>Mode</th><th>Action</th></tr>
           </thead>
           <tbody>
             {paidList.map(d => (
               <tr key={d.id}>
-                <td style={thTdStyle}>{d.name}</td>
-                <td style={thTdStyle}>₹{d.sevaAmount}</td>
-                <td style={thTdStyle}>{d.paymentMode.toUpperCase()}</td>
-                <td style={thTdStyle}>
-                  <button
-                    style={buttonStyle}
-                    onClick={() => handleMarkUnpaid(d.id)}
-                  >
-                    Unpaid
-                  </button>
-                </td>
+                <td>{d.name}</td>
+                <td>₹{d.sevaAmount}</td>
+                <td><span className={`badge ${d.paymentMode}`}>{d.paymentMode}</span></td>
+                <td><button className="btn undo" onClick={() => markUnpaid(d.id)}>Undo</button></td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
     </div>
   )
 }

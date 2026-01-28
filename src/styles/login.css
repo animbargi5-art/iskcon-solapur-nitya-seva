@@ -1,0 +1,330 @@
+/* ===============================
+   PAGE SCROLL CONTAINER
+================================ */
+.login-page {
+  position: relative;
+  min-height: 260vh;
+  overflow-x: hidden;
+}
+
+/* ===============================
+   RADHA KRISHNA SCROLLING IMAGE
+================================ */
+.login-scroll-bg {
+  position: absolute;
+  inset: 0;
+  height: 260vh;
+
+  background-image:
+    linear-gradient(
+      to right,
+      rgba(255,248,240,0.55),
+      rgba(255,248,240,0.15) 25%,
+      rgba(255,248,240,0.15) 75%,
+      rgba(255,248,240,0.55)
+    ),
+    url("/RAMA-bg.jpg");
+
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+  background-position: center top;
+
+  filter: contrast(1.15) saturate(1.35) brightness(1.08);
+  z-index: 0;
+}
+
+/* ===============================
+   SOFT SPIRITUAL OVERLAY
+================================ */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255,255,255,0.12),
+      rgba(255,255,255,0.32)
+    );
+  z-index: 1;
+}
+
+/* ===============================
+   FIXED CENTER CARD
+================================ */
+.login-fixed-center {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* ===============================
+   LOGIN CARD – SILK + FOREST
+================================ */
+.login-card {
+  position: relative;
+
+  background:
+    linear-gradient(
+      160deg,
+      rgba(245,255,240,0.55),
+      rgba(255,230,190,0.50),
+      rgba(210,245,210,0.55)
+    );
+
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+
+  padding: 46px;
+  border-radius: 36px;
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+
+  box-shadow:
+    0 45px 95px rgba(90,50,20,0.38),
+    inset 0 0 0 1px rgba(255,255,255,0.45);
+
+  animation: fadeInUp 0.9s ease;
+}
+
+/* ===============================
+   LOGO
+================================ */
+.login-logo {
+  width: 84px;
+  padding: 12px;
+  border-radius: 22px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255,255,255,0.95),
+      rgba(255,255,255,0.7)
+    );
+
+  box-shadow:
+    0 12px 26px rgba(0,0,0,0.3),
+    inset 0 0 0 1px rgba(255,190,120,0.65);
+}
+
+/* ===============================
+   TEXT
+================================ */
+.login-title {
+  font-size: 30px;
+  color: #bf360c;
+  margin-top: 14px;
+}
+
+.login-subtitle {
+  margin: 6px 0 24px;
+  color: #5a3e2b;
+}
+
+/* ===============================
+   ROLE SWITCH
+================================ */
+.role-switch {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.role-switch button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,180,120,0.55);
+  background: rgba(255,255,255,0.55);
+  cursor: pointer;
+}
+
+.role-switch .active {
+  background: linear-gradient(135deg, #ffd180, #ffb74d);
+}
+
+/* ===============================
+   INPUT GROUP
+================================ */
+.input-group {
+  margin-bottom: 22px;
+  text-align: left;
+}
+
+.input-group label {
+  font-size: 13px;
+  color: rgba(45,75,45,0.85);
+}
+
+.input-group input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(235,255,235,0.55),
+      rgba(210,240,210,0.45)
+    ),
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.05),
+      rgba(255,255,255,0.05) 1px,
+      transparent 1px,
+      transparent 6px
+    );
+
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(120,180,120,0.5);
+  color: #264326;
+  font-size: 15px;
+}
+
+/* ===============================
+   BUTTON
+================================ */
+.login-btn {
+  width: 100%;
+  padding: 15px;
+  border-radius: 18px;
+  border: none;
+  background: linear-gradient(135deg, #ff9800, #c2410c);
+  color: white;
+  font-size: 16px;
+  margin-top: 12px;
+
+  box-shadow: 0 12px 28px rgba(191,54,12,0.4);
+}
+
+/* ===============================
+   QUOTE
+================================ */
+.login-quote {
+  display: block;
+  margin-top: 24px;
+  font-size: 13px;
+  color: #5a3e2b;
+}
+
+/* ===============================
+   VRINDAVAN STRIPS (LEFT & RIGHT)
+================================ */
+.vrindavan-strip {
+  position: fixed;
+  top: 0;
+  width: 96px;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 3; /* above overlay */
+}
+
+.vrindavan-strip.left {
+  left: 0;
+  background:
+    linear-gradient(
+      to right,
+      rgba(10,40,25,0.95),
+      rgba(20,70,40,0.85),
+      rgba(40,120,70,0.55),
+      rgba(255,180,90,0.18),
+      transparent
+    );
+}
+
+.vrindavan-strip.right {
+  right: 0;
+  background:
+    linear-gradient(
+      to left,
+      rgba(10,40,25,0.95),
+      rgba(20,70,40,0.85),
+      rgba(40,120,70,0.55),
+      rgba(255,180,90,0.18),
+      transparent
+    );
+}
+
+
+/* ===============================
+   LOTUS – 8 PETALS + CENTER
+================================ */
+.lotus {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  z-index: 4; /* ABOVE overlay */
+  animation: floatUp 22s linear infinite;
+}
+
+.lotus span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50% 50% 35% 35%;
+
+  background: radial-gradient(
+    circle at 50% 70%,
+    #ffe4ec 0%,
+    #ff9fbf 45%,
+    #e91e63 75%
+  );
+
+  box-shadow:
+    0 0 8px rgba(255,120,170,0.6),
+    inset 0 0 4px rgba(255,255,255,0.6);
+}
+
+.lotus span:nth-child(1) { transform: rotate(0deg); }
+.lotus span:nth-child(2) { transform: rotate(45deg); }
+.lotus span:nth-child(3) { transform: rotate(90deg); }
+.lotus span:nth-child(4) { transform: rotate(135deg); }
+.lotus span:nth-child(5) { transform: rotate(180deg); }
+.lotus span:nth-child(6) { transform: rotate(225deg); }
+.lotus span:nth-child(7) { transform: rotate(270deg); }
+.lotus span:nth-child(8) { transform: rotate(315deg); }
+
+/* Lotus center */
+.lotus::after {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffeb3b, #f9a825);
+  box-shadow: 0 0 10px rgba(255,200,60,0.9);
+}
+
+
+/* ===============================
+   TULSI LEAF
+================================ */
+.tulsi {
+  position: absolute;
+  width: 36px;
+  height: 22px;
+  background: linear-gradient(135deg, #1b5e20, #66bb6a);
+  border-radius: 0 100% 0 100%;
+  animation: floatUp 30s linear infinite, sway 6s ease-in-out infinite;
+}
+
+/* ===============================
+   ANIMATIONS
+================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(35px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(0.85); opacity: 0; }
+  12% { opacity: 0.9; }
+  100% { transform: translateY(-160vh) scale(1.1); opacity: 0; }
+}
+
+@keyframes sway {
+  0% { transform: rotate(-5deg); }
+  50% { transform: rotate(5deg); }
+  100% { transform: rotate(-5deg); }
+}

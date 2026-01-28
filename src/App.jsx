@@ -1,4 +1,5 @@
-import { Routes, Route } from "react-router-dom"
+import { BrowserRouter, Routes, Route } from "react-router-dom"
+
 import Login from "./pages/Login"
 import Dashboard from "./pages/Dashboard"
 import Devotees from "./pages/Devotees"
@@ -7,36 +8,40 @@ import ProtectedRoute from "./components/ProtectedRoute"
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Login />} />
+    <BrowserRouter>
+      <Routes>
+        {/* PUBLIC ROUTE */}
+        <Route path="/" element={<Login />} />
 
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
+        {/* PROTECTED ROUTES */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/devotees"
-        element={
-          <ProtectedRoute>
-            <Devotees />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/devotees"
+          element={
+            <ProtectedRoute>
+              <Devotees />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/payments"
-        element={
-          <ProtectedRoute>
-            <PaymentHistory />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+        <Route
+          path="/payments"
+          element={
+            <ProtectedRoute>
+              <PaymentHistory />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
