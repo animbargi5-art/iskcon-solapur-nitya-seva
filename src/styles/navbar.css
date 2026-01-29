@@ -1,202 +1,227 @@
+/* ===============================
+   NAVBAR BASE
+================================ */
 .navbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 28px;
-    background: linear-gradient(90deg, #fff3e0, #ffffff);
-    border-bottom: 1px solid #f0e0d0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  
-  /* LEFT */
-  .navbar-left {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  
-  .navbar-logo {
-    height: 48px;
-    width: 48px;
-  }
-  
-  .navbar-title {
-    margin: 0;
-    color: #bf360c;
-    font-weight: 700;
-  }
-  
-  .navbar-subtitle {
-    color: #777;
-    font-size: 12px;
-  }
-  
-  /* CENTER */
-  .navbar-links {
-    display: flex;
-    gap: 24px;
-  }
-  
-  .navbar-links a {
-    text-decoration: none;
-    color: #5d4037;
-    font-weight: 500;
-    padding-bottom: 4px;
-    transition: 0.3s;
-  }
-  
-  .navbar-links a:hover {
-    color: #bf360c;
-  }
-  
-  .navbar-links a.active {
-    color: #bf360c;
-    border-bottom: 2px solid #bf360c;
-  }
-  
-  /* RIGHT */
-  .navbar-quote {
-    font-size: 13px;
-    color: #6d4c41;
-    font-style: italic;
-    max-width: 240px;
-    text-align: right;
-  }
-  
-  /* MOBILE */
-  @media (max-width: 768px) {
-    .navbar {
-      flex-direction: column;
-      gap: 10px;
-    }
-  
-    .navbar-links {
-      gap: 16px;
-    }
-  
-    .navbar-quote {
-      display: none;
-    }
-  }
-/* === LOGO CONTAINER === */
-.logo-wrap {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: radial-gradient(
-      circle,
-      rgba(255, 200, 120, 0.35),
-      rgba(255, 255, 255, 0.9)
-    );
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow:
-      0 0 12px rgba(255, 180, 90, 0.5),
-      0 0 30px rgba(255, 220, 160, 0.4);
-    animation: breathe 4s ease-in-out infinite;
-  }
-  
-  /* === LOGO IMAGE === */
-  .navbar-logo {
-    width: 42px;
-    height: 42px;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-  }
-  
-  /* === BREATHING / LIFE ANIMATION === */
-  @keyframes breathe {
-    0% {
-      transform: scale(1);
-      box-shadow:
-        0 0 12px rgba(255, 180, 90, 0.4),
-        0 0 24px rgba(255, 220, 160, 0.3);
-    }
-    50% {
-      transform: scale(1.06);
-      box-shadow:
-        0 0 20px rgba(255, 180, 90, 0.6),
-        0 0 40px rgba(255, 220, 160, 0.5);
-    }
-    100% {
-      transform: scale(1);
-      box-shadow:
-        0 0 12px rgba(255, 180, 90, 0.4),
-        0 0 24px rgba(255, 220, 160, 0.3);
-    }
-  }
- /* === DIVINE LOGO EFFECT === */
+  height: 70px;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 
- .logo-wrap {
+  background: linear-gradient(
+    135deg,
+    rgba(255,245,220,0.96),
+    rgba(255,230,190,0.94)
+  );
+
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,180,120,0.4);
+  box-shadow: 0 4px 18px rgba(90,50,20,0.15);
+
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* ===============================
+   LEFT
+================================ */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.navbar-logo {
+  width: 38px;
+}
+
+.navbar-text h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #bf360c;
+}
+
+.navbar-text span {
+  font-size: 12px;
+  color: #6d4c41;
+}
+
+/* ===============================
+   LINKS
+================================ */
+.navbar-links {
+  display: flex;
+  gap: 26px;
+}
+
+.navbar-links a {
+  text-decoration: none;
+  font-size: 14px;
+  color: #5a3e2b;
   position: relative;
-  width: 64px;
-  height: 64px;
+}
+
+.navbar-links a::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: #ff9800;
+  transition: 0.25s;
+}
+
+.navbar-links a:hover::after,
+.navbar-links a.active::after {
+  width: 100%;
+}
+
+.navbar-links a.active {
+  font-weight: 600;
+  color: #bf360c;
+}
+
+/* ===============================
+   RIGHT
+================================ */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Notification */
+.nav-icon {
+  position: relative;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: #bf360c;
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+/* Profile */
+.profile-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff9800, #bf360c);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;   /* ❌ no white circle */
+  font-weight: 600;
 }
 
+.role {
+  font-size: 13px;
+  color: #5a3e2b;
+}
 
-/* Lotus aura behind */
-.logo-wrap::before {
-  content: "";
+/* Dropdown */
+.profile-menu {
   position: absolute;
-  inset: -20px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 183, 77, 0.45),
-    rgba(255, 138, 101, 0.25),
-    transparent 70%
+  right: 0;
+  top: 46px;
+  width: 160px;
+
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(8px);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+  padding: 8px;
+  z-index: 200;
+}
+
+.profile-menu button {
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #5a3e2b;
+}
+
+.profile-menu button:hover {
+  background: rgba(255,180,120,0.25);
+  border-radius: 10px;
+}
+
+.profile-menu .logout {
+  color: #bf360c;
+  font-weight: 600;
+}
+
+.profile-menu hr {
+  border: none;
+  height: 1px;
+  background: rgba(0,0,0,0.1);
+  margin: 6px 0;
+}
+
+.navbar {
+  transition:
+    height 0.35s ease,
+    padding 0.35s ease,
+    background 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+.navbar-scrolled {
+  height: 58px;
+  padding: 0 24px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(255,230,190,0.97),
+    rgba(255,210,160,0.95)
   );
-  filter: blur(16px);
-  animation: auraPulse 4s ease-in-out infinite;
-  z-index: 0;
+
+  box-shadow: 0 6px 24px rgba(90,50,20,0.35);
 }
 
-
-/* Logo itself */
-.navbar-logo {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-  position: relative;
-  z-index: 1;
+.navbar-scrolled .navbar-logo {
+  width: 32px;
 }
 
-/* Animations */
-@keyframes rotateAura {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.navbar-scrolled .navbar-text h3 {
+  font-size: 14px;
 }
 
-@keyframes auraPulse {
-  0%, 100% {
-    box-shadow: 0 0 18px rgba(255, 138, 101, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 35px rgba(255, 138, 101, 0.8);
-  }
-}
-.navbar-logo {
-  animation: floatLogo 3s ease-in-out infinite;
+.navbar-scrolled .navbar-text span {
+  font-size: 11px;
 }
 
-@keyframes floatLogo {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-3px);
+.navbar-scrolled .navbar-links a {
+  font-size: 13px;
+}
+
+/* ===============================
+   MOBILE
+================================ */
+@media (max-width: 768px) {
+  .navbar-links {
+    display: none;
   }
 }
-   

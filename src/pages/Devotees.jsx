@@ -1,44 +1,27 @@
 import { useState, useEffect } from "react"
 import { auth } from "../services/firebase"
-import "../styles/devotees.css"
 import {
   getDevotees,
   addDevotee,
   updateDevotee,
   setDevoteeActive,
 } from "../services/devotees.service"
+
+import { isBirthdayToday } from "../utils/birthday.utils"
+import { birthdayMessage } from "../utils/whatsappMessage"
+
 import Navbar from "../components/Navbar"
+import ToastContainer from "../components/ToastContainer"
+import "../styles/devotees.css"
 
-/* ===============================
-   BASIC STYLES (INLINE FOR NOW)
-================================ */
-const containerStyle = {
-  maxWidth: "1200px",
-  margin: "auto",
-  padding: "20px",
-}
-
-const sectionStyle = {
-  background: "#ffffff",
-  padding: "20px",
-  borderRadius: "14px",
-  marginBottom: "20px",
-  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-}
-
-const cardStyle = {
-  flex: 1,
-  padding: "16px",
-  borderRadius: "12px",
-  background: "#f7f8fb",
-  textAlign: "center",
-}
-
-/* ===============================
-   COMPONENT
-================================ */
 function Devotees() {
-  /* ===== FORM STATE ===== */
+  /* ===============================
+     STATE
+  =============================== */
+  const [devoteeList, setDevoteeList] = useState([])
+  const [userRole, setUserRole] = useState("member")
+
+  // Form
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
   const [whatsapp, setWhatsapp] = useState("")
@@ -48,22 +31,35 @@ function Devotees() {
   const [notes, setNotes] = useState("")
   const [editingId, setEditingId] = useState(null)
   const [loading, setLoading] = useState(false)
+
+  // UI
   const [search, setSearch] = useState("")
+  const [toasts, setToasts] = useState([])
 
-  /* ===== ROLE ===== */
-  const [userRole, setUserRole] = useState("member")
+  /* ===============================
+     TOAST HANDLER
+  =============================== */
+  const addToast = (message, type = "info") => {
+    const id = Date.now()
+    setToasts(prev => [...prev, { id, message, type }])
 
-  /* ===== LIST ===== */
-  const [devoteeList, setDevoteeList] = useState([])
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id))
+    }, 4000)
+  }
 
-  /* ===== LOAD ROLE ===== */
+  /* ===============================
+     LOAD USER ROLE
+  =============================== */
   useEffect(() => {
     if (auth.currentUser) {
-      setUserRole("admin")
+      setUserRole("admin") // later: fetch from Firestore
     }
   }, [])
 
-  /* ===== FETCH DEVOTEES ===== */
+  /* ===============================
+     FETCH DEVOTEES
+  =============================== */
   const fetchDevotees = async () => {
     const list = await getDevotees()
     setDevoteeList(list)
@@ -73,7 +69,20 @@ function Devotees() {
     fetchDevotees()
   }, [])
 
-  /* ===== ADD / UPDATE ===== */
+  /* ===============================
+     TODAY BIRTHDAY TOAST
+  =============================== */
+  useEffect(() => {
+    devoteeList.forEach(d => {
+      if (isBirthdayToday(d.birthday)) {
+        addToast(`🎂 Today is ${d.name}'s Birthday`, "success")
+      }
+    })
+  }, [devoteeList])
+
+  /* ===============================
+     ADD / UPDATE DEVOTEE
+  =============================== */
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
@@ -89,10 +98,11 @@ function Devotees() {
           anniversary,
           notes,
         })
+        addToast("Devotee updated successfully", "success")
       } else {
-        const duplicate = devoteeList.find(d => d.phone === phone)
-        if (duplicate) {
-          alert("Devotee with this phone already exists")
+        const exists = devoteeList.find(d => d.phone === phone)
+        if (exists) {
+          addToast("Devotee with this phone already exists", "error")
           setLoading(false)
           return
         }
@@ -110,16 +120,10 @@ function Devotees() {
           createdAt: new Date(),
         })
 
-        await addDevotee({
-          name: payment.name,
-          phone: payment.phone,
-          sevaAmount: payment.amount,
-          source: "payment",
-          active: true,
-        })
-        
+        addToast("Devotee added successfully", "success")
       }
 
+      // Reset
       setEditingId(null)
       setName("")
       setPhone("")
@@ -131,13 +135,15 @@ function Devotees() {
       fetchDevotees()
     } catch (err) {
       console.error(err)
-      alert("Error saving devotee")
+      addToast("Error saving devotee", "error")
     }
 
     setLoading(false)
   }
 
-  /* ===== EDIT ===== */
+  /* ===============================
+     EDIT
+  =============================== */
   const handleEdit = (d) => {
     setEditingId(d.id)
     setName(d.name)
@@ -149,20 +155,23 @@ function Devotees() {
     setNotes(d.notes || "")
   }
 
-  /* ===== ACTIVATE / DEACTIVATE ===== */
-  const setActiveStatus = async (id, active) => {
+  /* ===============================
+     ACTIVATE / DEACTIVATE
+  =============================== */
+  const toggleStatus = async (id, active) => {
     await setDevoteeActive(id, active)
     fetchDevotees()
   }
 
-  /* ===== FILTER ===== */
+  /* ===============================
+     FILTERS
+  =============================== */
   const filteredList = devoteeList.filter(
-    (d) =>
+    d =>
       d.name.toLowerCase().includes(search.toLowerCase()) ||
       d.phone.includes(search)
   )
 
-  /* ===== UPCOMING BIRTHDAYS (7 DAYS) ===== */
   const today = new Date()
   const upcomingBirthdays = devoteeList.filter(d => {
     if (!d.birthday) return false
@@ -172,144 +181,122 @@ function Devotees() {
     return diff >= 0 && diff <= 7
   })
 
+  /* ===============================
+     RENDER
+  =============================== */
   return (
-    <div style={containerStyle}>
+    <div className="devotees-container">
       <Navbar />
 
-      <h2>Devotee Management</h2>
+      <ToastContainer
+        toasts={toasts}
+        removeToast={id =>
+          setToasts(prev => prev.filter(t => t.id !== id))
+        }
+      />
 
-      {/* ===== SUMMARY ===== */}
+      <h2 className="page-title">Devotee Management</h2>
+
+      {/* SUMMARY */}
       <div className="summary-row">
-  <div className="summary-card">
-    <h4>Total Devotees</h4>
-    <strong>{devoteeList.length}</strong>
-  </div>
+        <div className="summary-card">
+          <h4>Total</h4>
+          <strong>{devoteeList.length}</strong>
+        </div>
+        <div className="summary-card">
+          <h4>Active</h4>
+          <strong>{devoteeList.filter(d => d.active).length}</strong>
+        </div>
+        <div className="summary-card">
+          <h4>Auto Added</h4>
+          <strong>{devoteeList.filter(d => d.source === "payment").length}</strong>
+        </div>
+      </div>
 
-  <div className="summary-card">
-    <h4>Active</h4>
-    <strong>{devoteeList.filter(d => d.active).length}</strong>
-  </div>
-
-  <div className="summary-card">
-    <h4>Auto Added</h4>
-    <strong>{devoteeList.filter(d => d.source === "payment").length}</strong>
-  </div>
-</div>
-
-
-      {/* ===== FORM ===== */}
+      {/* FORM */}
       <div className="section">
-  <h3>{editingId ? "Edit Devotee" : "Add New Devotee"}</h3>
+        <h3>{editingId ? "Edit Devotee" : "Add New Devotee"}</h3>
 
-  <form onSubmit={handleSubmit}>
-    <h4>Personal Details</h4>
-    <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} required />
-    <input placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} required />
-    <input placeholder="WhatsApp (optional)" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} />
+        <form onSubmit={handleSubmit} className="devotee-form">
+          <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} required />
+          <input placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} required />
+          <input placeholder="WhatsApp" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} />
 
-    <h4>Seva Details</h4>
-    <input
-      type="number"
-      placeholder="Seva Amount ₹"
-      value={sevaAmount}
-      onChange={e => setSevaAmount(e.target.value)}
-      required
-    />
+          <input type="number" placeholder="Seva Amount ₹" value={sevaAmount} onChange={e => setSevaAmount(e.target.value)} required />
 
-    <h4>Important Dates</h4>
-    <label>🎂 Birthday</label>
-    <input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} />
+          <label>🎂 Birthday</label>
+          <input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} />
 
-    <label>💍 Anniversary</label>
-    <input type="date" value={anniversary} onChange={e => setAnniversary(e.target.value)} />
+          <label>💍 Anniversary</label>
+          <input type="date" value={anniversary} onChange={e => setAnniversary(e.target.value)} />
 
-    <h4>Notes</h4>
-    <textarea
-      placeholder="Notes (Life member, Festival donor, etc.)"
-      value={notes}
-      onChange={e => setNotes(e.target.value)}
-      rows={3}
-    />
+          <textarea placeholder="Notes" value={notes} onChange={e => setNotes(e.target.value)} />
 
-    <button type="submit" disabled={loading}>
-      {editingId ? "Update Devotee" : "Add Devotee"}
-    </button>
+          <button type="submit" disabled={loading}>
+            {editingId ? "Update Devotee" : "Add Devotee"}
+          </button>
 
-    {editingId && (
-      <button type="button" className="secondary" onClick={() => setEditingId(null)}>
-        Clear
-      </button>
-    )}
-  </form>
-</div>
+          {editingId && (
+            <button type="button" className="secondary" onClick={() => setEditingId(null)}>
+              Clear
+            </button>
+          )}
+        </form>
+      </div>
 
-
-      {/* ===== UPCOMING BIRTHDAYS ===== */}
+      {/* UPCOMING BIRTHDAYS */}
       <div className="section">
-  <h3>🎉 Upcoming Birthdays (Next 7 Days)</h3>
+        <h3>🎉 Upcoming Birthdays (7 Days)</h3>
+        {upcomingBirthdays.length === 0 && <p>No upcoming birthdays</p>}
+        {upcomingBirthdays.map(d => (
+          <div key={d.id} className="event-item">
+            🎂 {d.name} – {new Date(d.birthday).toLocaleDateString()}
+          </div>
+        ))}
+      </div>
 
-  {upcomingBirthdays.length === 0 && (
-    <p>No upcoming birthdays</p>
-  )}
+      {/* SEARCH */}
+      <input
+        className="search-input"
+        placeholder="Search by name or phone"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+      />
 
-  {upcomingBirthdays.map(d => (
-    <div key={d.id} className="event-item">
-      🎂 {d.name} – {new Date(d.birthday).toLocaleDateString()}
-    </div>
-  ))}
-</div>
-
-
-      {/* ===== SEARCH ===== */}
-      <div className="search-bar">
-  <input
-    type="text"
-    placeholder="Search by name or phone"
-    value={search}
-    onChange={e => setSearch(e.target.value)}
-  />
-</div>
-
-
-      {/* ===== TABLE ===== */}
-      <table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Phone</th>
-      <th>Seva ₹</th>
-      <th>Source</th>
-      <th>Status</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-
-  <tbody>
-    {filteredList.map(d => (
-      <tr key={d.id}>
-        <td>{d.name}</td>
-        <td>{d.phone}</td>
-        <td>₹{d.sevaAmount}</td>
-        <td>{d.source || "manual"}</td>
-
-        <td className={d.active ? "status-active" : "status-inactive"}>
-          {d.active ? "Active" : "Inactive"}
-        </td>
-
-        <td>
-          {userRole === "admin" && (
-            <button onClick={() => handleEdit(d)}>Edit</button>
-          )}
-          {d.active ? (
-            <button onClick={() => setActiveStatus(d.id, false)}>Deactivate</button>
-          ) : (
-            <button onClick={() => setActiveStatus(d.id, true)}>Activate</button>
-          )}
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
+      {/* TABLE */}
+      <table className="devotee-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Seva ₹</th>
+            <th>Source</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredList.map(d => (
+            <tr key={d.id}>
+              <td>{d.name}</td>
+              <td>{d.phone}</td>
+              <td>₹{d.sevaAmount}</td>
+              <td>{d.source || "manual"}</td>
+              <td className={d.active ? "status-active" : "status-inactive"}>
+                {d.active ? "Active" : "Inactive"}
+              </td>
+              <td>
+                {userRole === "admin" && (
+                  <button onClick={() => handleEdit(d)}>Edit</button>
+                )}
+                <button onClick={() => toggleStatus(d.id, !d.active)}>
+                  {d.active ? "Deactivate" : "Activate"}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
