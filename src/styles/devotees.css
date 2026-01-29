@@ -1,0 +1,255 @@
+/* ===============================
+   GLOBAL
+================================ */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    font-family: "Inter", system-ui, sans-serif;
+    background: linear-gradient(
+      180deg,
+      #fff8ec,
+      #fff3db,
+      #ffefd0
+    );
+  }
+  
+  /* ===============================
+     PAGE CONTAINER
+  ================================ */
+  .devotees-page {
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+  }
+  
+  /* ===============================
+     HEADINGS
+  ================================ */
+  .devotees-page h2 {
+    color: #bf360c;
+    margin-bottom: 16px;
+  }
+  
+  .devotees-page h3 {
+    color: #8d4b20;
+    margin-bottom: 12px;
+  }
+  
+  /* ===============================
+     SUMMARY CARDS
+  ================================ */
+  .summary-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  
+  .summary-card {
+    flex: 1;
+    min-width: 200px;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 230, 190, 0.7),
+      rgba(230, 255, 230, 0.6)
+    );
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+    box-shadow: 0 12px 28px rgba(120, 70, 30, 0.18);
+  }
+  
+  .summary-card h4 {
+    margin: 0;
+    font-size: 14px;
+    color: #6a3a1a;
+  }
+  
+  .summary-card strong {
+    font-size: 26px;
+    color: #bf360c;
+  }
+  
+  /* ===============================
+     SECTIONS
+  ================================ */
+  .section {
+    background: linear-gradient(
+      160deg,
+      rgba(255, 245, 225, 0.8),
+      rgba(235, 255, 235, 0.75)
+    );
+    backdrop-filter: blur(10px);
+    padding: 22px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 18px 40px rgba(100, 60, 30, 0.18);
+  }
+  
+  /* ===============================
+     FORM
+  ================================ */
+  .section form h4 {
+    margin-top: 18px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #6a4a2b;
+  }
+  
+  .section input,
+  .section textarea {
+    width: 100%;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(180, 140, 80, 0.4);
+    background: linear-gradient(
+      135deg,
+      rgba(255,255,255,0.75),
+      rgba(235,255,235,0.65)
+    );
+    font-size: 14px;
+  }
+  
+  .section input:focus,
+  .section textarea:focus {
+    outline: none;
+    border-color: #ff9800;
+    box-shadow: 0 0 0 2px rgba(255,152,0,0.25);
+  }
+  
+  /* ===============================
+     BUTTONS
+  ================================ */
+  button {
+    padding: 10px 16px;
+    border-radius: 14px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    background: linear-gradient(135deg, #ff9800, #c2410c);
+    color: white;
+    box-shadow: 0 8px 18px rgba(191,54,12,0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  
+  button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(191,54,12,0.45);
+  }
+  
+  button:active {
+    transform: scale(0.96);
+  }
+  
+  /* Secondary button */
+  button.secondary {
+    background: linear-gradient(135deg, #ffe0b2, #ffcc80);
+    color: #6a3a1a;
+  }
+  
+  /* ===============================
+     SEARCH BAR
+  ================================ */
+  .search-bar {
+    position: sticky;
+    top: 10px;
+    z-index: 10;
+    margin-bottom: 16px;
+  }
+  
+  .search-bar input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(180,140,80,0.4);
+    background: rgba(255,255,255,0.8);
+  }
+  
+  /* ===============================
+     TABLE
+  ================================ */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255,255,255,0.75);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  
+  thead {
+    background: linear-gradient(135deg, #ffe0b2, #ffcc80);
+  }
+  
+  thead th {
+    padding: 12px;
+    text-align: left;
+    font-size: 13px;
+    color: #6a3a1a;
+  }
+  
+  tbody td {
+    padding: 12px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(200,180,140,0.3);
+  }
+  
+  tbody tr:hover {
+    background: rgba(255, 240, 210, 0.6);
+  }
+  
+  /* ===============================
+     STATUS
+  ================================ */
+  .status-active {
+    color: #2e7d32;
+    font-weight: 600;
+  }
+  
+  .status-inactive {
+    color: #c62828;
+    font-weight: 600;
+  }
+  
+  /* ===============================
+     UPCOMING EVENTS
+  ================================ */
+  .event-item {
+    padding: 8px 0;
+    font-size: 14px;
+    color: #5a3e2b;
+  }
+  
+  /* ===============================
+     RESPONSIVE
+  ================================ */
+  @media (max-width: 768px) {
+    .summary-row {
+      flex-direction: column;
+    }
+  
+    table {
+      font-size: 13px;
+    }
+  
+    thead {
+      display: none;
+    }
+  
+    tbody tr {
+      display: block;
+      margin-bottom: 12px;
+      border-radius: 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+  
+    tbody td {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 14px;
+    }
+  }
+  
