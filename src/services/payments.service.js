@@ -7,12 +7,19 @@ import {
   orderBy,
   Timestamp
 } from "firebase/firestore"
+import { addDevoteeFromPayment } from "./devotees.service"
 
-export const addPayment = async (payment) => {
-  return await addDoc(collection(db, "payments"), {
-    ...payment,
-    createdAt: Timestamp.now(),
+const paymentsRef = collection(db, "payments")
+
+export const addPayment = async (paymentData) => {
+  // 1️⃣ Save payment
+  await addDoc(paymentsRef, {
+    ...paymentData,
+    createdAt: serverTimestamp(),
   })
+
+  // 2️⃣ Auto add devotee
+  await addDevoteeFromPayment(paymentData)
 }
 
 export const getPayments = async () => {

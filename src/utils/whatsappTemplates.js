@@ -10,16 +10,19 @@ export const birthdayMessage = (name) =>
   ISKCON Solapur`
     )
   
-  export const paymentThankYouMessage = (name, amount) =>
-    encodeURIComponent(
-      `🙏 Hare Krishna ${name}
-  
-  Thank you for your seva of ₹${amount}.
-  Your contribution helps us serve Sri Sri Radha Krishna.
-  
-  May the Lord bless you abundantly 🌼
-  ISKCON Solapur`
-    )
+  export const paymentMessage = (name, amount) => {
+      return encodeURIComponent(
+        `🙏 Hare Krishna ${name}
+    
+  Thank you for your generous Seva of ₹${amount}.
+    
+  Your contribution helps in spreading Krishna consciousness and temple services.
+    
+  May Sri Radha Krishna bless you abundantly 🌸
+    
+  — ISKCON Solapur`
+      )
+  }
   
   export const sevaReminderMessage = (name) =>
     encodeURIComponent(

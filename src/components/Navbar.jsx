@@ -64,8 +64,8 @@ function Navbar() {
 
           {openMenu && (
             <div className="profile-menu">
-              <button onClick={() => navigate("/profile")}>My Profile</button>
-              <button onClick={() => navigate("/settings")}>Settings</button>
+              {/*<button onClick={() => navigate("/profile")}>My Profile</button>
+              <button onClick={() => navigate("/settings")}>Settings</button>*/}
               <hr />
               <button className="logout" onClick={handleLogout}>
                 Logout

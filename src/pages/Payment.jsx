@@ -2,7 +2,7 @@ import { useState } from "react"
 import { addPayment } from "../services/payments.service"
 import { addDevoteeFromPayment } from "../services/devotees.service"
 import Navbar from "../components/Navbar"
-import { paymentThankYouMessage } from "../utils/whatsappTemplates"
+import { paymentMessage } from "../utils/whatsappTemplates"
 
 function Payments() {
   const [name, setName] = useState("")
@@ -27,16 +27,16 @@ function Payments() {
       "_blank"
     )
     
-    await addPayment(payment)
-    await addDevoteeFromPayment(payment)
-
-    setName("")
-    setPhone("")
-    setAmount("")
-    setLoading(false)
-
-    alert("Payment recorded & devotee auto-added 🙏")
-  }
+    await addPayment({
+      name,
+      phone,
+      amount,
+    })
+    await addDevoteeFromPayment({
+      name,
+      phone,
+      amount,
+    })
 
   return (
     <div style={{ maxWidth: "500px", margin: "auto", padding: "20px" }}>
@@ -47,6 +47,15 @@ function Payments() {
         <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} required />
         <input placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} required />
         <input type="number" placeholder="Amount ₹" value={amount} onChange={e => setAmount(e.target.value)} required />
+        
+        <a
+          href={`https://wa.me/91${p.phone}?text=${paymentMessage(p.name, p.amount)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="whatsapp-btn"
+        >
+          Send Receipt 💰
+        </a>
 
         <button type="submit" disabled={loading}>
           Record Payment
@@ -56,4 +65,5 @@ function Payments() {
   )
 }
 
+}
 export default Payments

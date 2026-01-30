@@ -9,6 +9,7 @@ import {
 
 import { isBirthdayToday } from "../utils/birthday.utils"
 import { birthdayMessage } from "../utils/whatsappTemplates"
+import { listenToDevotees } from "../services/devotees.service"
 
 import Navbar from "../components/Navbar"
 import ToastContainer from "../components/ToastContainer"
@@ -56,16 +57,9 @@ function Devotees() {
     }
   }, [])
 
-  /* ===============================
-     FETCH DEVOTEES
-  =============================== */
-  const fetchDevotees = async () => {
-    const list = await getDevotees()
-    setDevoteeList(list)
-  }
-
   useEffect(() => {
-    fetchDevotees()
+    const unsubscribe = listenToDevotees(setDevoteeList)
+    return () => unsubscribe()
   }, [])
 
   /* ===============================
@@ -249,6 +243,15 @@ function Devotees() {
         {devoteeList.filter(d => isBirthdayToday(d.birthday)).length === 0 && (
           <p>No birthdays today</p>
         )}
+
+        <a
+          href={`https://wa.me/91${d.whatsapp || d.phone}?text=${birthdayMessage(d.name)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="whatsapp-btn"
+        >
+          Send Birthday Wish 🎂
+        </a>
 
         {devoteeList
           .filter(d => isBirthdayToday(d.birthday))

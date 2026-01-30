@@ -6,14 +6,27 @@ import {
   doc,
   query,
   orderBy,
+  onSnapshot,
+  where
 } from "firebase/firestore"
 import { db } from "./firebase"
+
 
 /* ===============================
    COLLECTION REFERENCE
    (IMPORTANT: DO NOT rename `collection`)
 ================================ */
 const devoteesRef = collection(db, "devotees")
+
+export const listenToDevotees = (callback) => {
+  return onSnapshot(devoteesRef, (snapshot) => {
+    const list = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+    }))
+    callback(list)
+  })
+}
 
 /* ===============================
    GET ALL DEVOTEES
@@ -54,19 +67,22 @@ export const setDevoteeActive = async (id, active) => {
   await updateDoc(ref, { active })
 }
 
-/* ===============================
-   ADD DEVOTEE FROM PAYMENT
-================================ */
-export const addDevoteeFromPayment = async payment => {
-  if (!payment?.name || !payment?.phone) return
+/* =========================================
+   🔥 AUTO ADD FROM PAYMENT (IMPORTANT)
+========================================= */
+export const addDevoteeFromPayment = async (payment) => {
+  const q = query(devoteesRef, where("phone", "==", payment.phone))
+  const snap = await getDocs(q)
+
+  if (!snap.empty) return // already exists
 
   await addDoc(devoteesRef, {
     name: payment.name,
     phone: payment.phone,
     whatsapp: payment.phone,
-    sevaAmount: Number(payment.amount || 0),
-    source: "payment",
+    sevaAmount: payment.amount,
     active: true,
+    source: "payment",
     createdAt: new Date(),
   })
 }
