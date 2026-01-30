@@ -1,59 +1,72 @@
-import { collection, getDocs, addDoc, updateDoc, doc } from "firebase/firestore"
-import { db } from "./firebase"
 import {
   collection,
-  addDoc,
   getDocs,
+  addDoc,
+  updateDoc,
+  doc,
   query,
-  where,
-  Timestamp
+  orderBy,
 } from "firebase/firestore"
+import { db } from "./firebase"
 
-export const addDevoteeFromPayment = async (payment) => {
-  const q = query(
-    collection(db, "devotees"),
-    where("phone", "==", payment.phone)
-  )
+/* ===============================
+   COLLECTION REFERENCE
+   (IMPORTANT: DO NOT rename `collection`)
+================================ */
+const devoteesRef = collection(db, "devotees")
 
-  const existing = await getDocs(q)
-
-  if (existing.empty) {
-    await addDoc(collection(db, "devotees"), {
-      name: payment.name,
-      phone: payment.phone,
-      sevaAmount: payment.amount,
-      source: "payment",
-      active: true,
-      birthday: "",
-      anniversary: "",
-      notes: "Auto-added from payment",
-      createdAt: Timestamp.now(),
-    })
-  }
-}
-
-
-/* ===== GET ALL DEVOTEES ===== */
+/* ===============================
+   GET ALL DEVOTEES
+================================ */
 export const getDevotees = async () => {
-  const snap = await getDocs(collection(db, "devotees"))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+  const q = query(devoteesRef, orderBy("createdAt", "desc"))
+  const snapshot = await getDocs(q)
+
+  return snapshot.docs.map(docSnap => ({
+    id: docSnap.id,
+    ...docSnap.data(),
+  }))
 }
 
-/* ===== ADD DEVOTEE ===== */
-export const addDevotee = async (data) => {
-  return await addDoc(collection(db, "devotees"), {
+/* ===============================
+   ADD DEVOTEE
+================================ */
+export const addDevotee = async data => {
+  await addDoc(devoteesRef, {
     ...data,
-    active: true,
-    createdAt: new Date(),
+    createdAt: data.createdAt || new Date(),
   })
 }
 
-/* ===== UPDATE DEVOTEE ===== */
+/* ===============================
+   UPDATE DEVOTEE
+================================ */
 export const updateDevotee = async (id, data) => {
-  return await updateDoc(doc(db, "devotees", id), data)
+  const ref = doc(db, "devotees", id)
+  await updateDoc(ref, data)
 }
 
-/* ===== ACTIVATE / DEACTIVATE ===== */
+/* ===============================
+   ACTIVATE / DEACTIVATE
+================================ */
 export const setDevoteeActive = async (id, active) => {
-  return await updateDoc(doc(db, "devotees", id), { active })
+  const ref = doc(db, "devotees", id)
+  await updateDoc(ref, { active })
+}
+
+/* ===============================
+   ADD DEVOTEE FROM PAYMENT
+================================ */
+export const addDevoteeFromPayment = async payment => {
+  if (!payment?.name || !payment?.phone) return
+
+  await addDoc(devoteesRef, {
+    name: payment.name,
+    phone: payment.phone,
+    whatsapp: payment.phone,
+    sevaAmount: Number(payment.amount || 0),
+    source: "payment",
+    active: true,
+    createdAt: new Date(),
+  })
 }
