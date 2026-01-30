@@ -7,15 +7,11 @@ import "../styles/navbar.css"
 function Navbar() {
   const location = useLocation()
   const navigate = useNavigate()
-  const [openMenu, setOpenMenu] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
-  /* 🔥 SCROLL EFFECT */
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 30)
-    }
-
+    const handleScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
@@ -25,15 +21,11 @@ function Navbar() {
     navigate("/")
   }
 
-  const goToIskconInfo = () => {
-    window.open("https://iskconsolapur.org", "_blank")
-  }
-
   return (
     <nav className={`navbar ${scrolled ? "navbar-scrolled" : ""}`}>
-
+      
       {/* LEFT */}
-      <div className="navbar-left" onClick={goToIskconInfo}>
+      <div className="navbar-left" onClick={() => navigate("/dashboard")}>
         <img src="/ISKCON.png" alt="ISKCON" className="navbar-logo" />
         <div className="navbar-text">
           <h3>ISKCON Solapur</h3>
@@ -41,8 +33,8 @@ function Navbar() {
         </div>
       </div>
 
-      {/* CENTER */}
-      <div className="navbar-links">
+      {/* DESKTOP LINKS */}
+      <div className="navbar-links desktop-only">
         <Link to="/dashboard" className={location.pathname === "/dashboard" ? "active" : ""}>
           Dashboard
         </Link>
@@ -56,24 +48,20 @@ function Navbar() {
 
       {/* RIGHT */}
       <div className="navbar-right">
-        <div className="nav-icon">🔔</div>
-
-        <div className="profile-wrap" onClick={() => setOpenMenu(!openMenu)}>
-          <div className="avatar">A</div>
-          <span className="role">Admin</span>
-
-          {openMenu && (
-            <div className="profile-menu">
-              <button onClick={() => navigate("/profile")}>My Profile</button>
-              <button onClick={() => navigate("/settings")}>Settings</button>
-              <hr />
-              <button className="logout" onClick={handleLogout}>
-                Logout
-              </button>
-            </div>
-          )}
-        </div>
+        <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
+          ☰
+        </button>
       </div>
+
+      {/* MOBILE MENU */}
+      {menuOpen && (
+        <div className="mobile-menu">
+          <Link to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</Link>
+          <Link to="/devotees" onClick={() => setMenuOpen(false)}>Devotees</Link>
+          <Link to="/payments" onClick={() => setMenuOpen(false)}>Payments</Link>
+          <button className="logout-btn" onClick={handleLogout}>Logout</button>
+        </div>
+      )}
     </nav>
   )
 }
