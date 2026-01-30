@@ -2,6 +2,7 @@ import { useState } from "react"
 import { addPayment } from "../services/payments.service"
 import { addDevoteeFromPayment } from "../services/devotees.service"
 import Navbar from "../components/Navbar"
+import { paymentThankYouMessage } from "../utils/whatsappTemplates"
 
 function Payments() {
   const [name, setName] = useState("")
@@ -20,7 +21,12 @@ function Payments() {
       status: "paid",
       method: "manual",
     }
-
+    
+    window.open(
+      `https://wa.me/91${phone}?text=${paymentThankYouMessage(name, amount)}`,
+      "_blank"
+    )
+    
     await addPayment(payment)
     await addDevoteeFromPayment(payment)
 

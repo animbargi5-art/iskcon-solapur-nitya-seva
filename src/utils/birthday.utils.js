@@ -1,12 +1,11 @@
-export const isBirthdayToday = (dateString) => {
-    if (!dateString) return false
-  
-    const today = new Date()
-    const birthday = new Date(dateString)
-  
-    return (
-      today.getDate() === birthday.getDate() &&
-      today.getMonth() === birthday.getMonth()
-    )
-  }
-  
+export const isBirthdayToday = (birthday) => {
+  if (!birthday) return false
+
+  const today = new Date()
+  const bday = new Date(birthday)
+
+  return (
+    today.getDate() === bday.getDate() &&
+    today.getMonth() === bday.getMonth()
+  )
+}

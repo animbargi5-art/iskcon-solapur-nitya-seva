@@ -8,7 +8,7 @@ import {
 } from "../services/devotees.service"
 
 import { isBirthdayToday } from "../utils/birthday.utils"
-import { birthdayMessage } from "../utils/whatsappMessage"
+import { birthdayMessage } from "../utils/whatsappTemplates"
 
 import Navbar from "../components/Navbar"
 import ToastContainer from "../components/ToastContainer"
@@ -37,23 +37,22 @@ function Devotees() {
   const [toasts, setToasts] = useState([])
 
   /* ===============================
-     TOAST HANDLER
+     TOAST
   =============================== */
   const addToast = (message, type = "info") => {
     const id = Date.now()
     setToasts(prev => [...prev, { id, message, type }])
-
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id))
     }, 4000)
   }
 
   /* ===============================
-     LOAD USER ROLE
+     ROLE
   =============================== */
   useEffect(() => {
     if (auth.currentUser) {
-      setUserRole("admin") // later: fetch from Firestore
+      setUserRole("admin")
     }
   }, [])
 
@@ -81,7 +80,7 @@ function Devotees() {
   }, [devoteeList])
 
   /* ===============================
-     ADD / UPDATE DEVOTEE
+     ADD / UPDATE
   =============================== */
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -123,7 +122,6 @@ function Devotees() {
         addToast("Devotee added successfully", "success")
       }
 
-      // Reset
       setEditingId(null)
       setName("")
       setPhone("")
@@ -156,7 +154,7 @@ function Devotees() {
   }
 
   /* ===============================
-     ACTIVATE / DEACTIVATE
+     STATUS
   =============================== */
   const toggleStatus = async (id, active) => {
     await setDevoteeActive(id, active)
@@ -244,10 +242,35 @@ function Devotees() {
         </form>
       </div>
 
-      {/* UPCOMING BIRTHDAYS */}
+      {/* TODAY'S BIRTHDAYS */}
+      <div className="section">
+        <h3>🎂 Today's Birthdays</h3>
+
+        {devoteeList.filter(d => isBirthdayToday(d.birthday)).length === 0 && (
+          <p>No birthdays today</p>
+        )}
+
+        {devoteeList
+          .filter(d => isBirthdayToday(d.birthday))
+          .map(d => (
+            <div key={d.id} className="event-item">
+              🎉 <strong>{d.name}</strong>
+
+              <a
+                href={`https://wa.me/91${d.whatsapp || d.phone}?text=${birthdayMessage(d.name)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="whatsapp-btn"
+              >
+                Send Birthday Wish 🎂
+              </a>
+            </div>
+          ))}
+      </div>
+
+      {/* UPCOMING */}
       <div className="section">
         <h3>🎉 Upcoming Birthdays (7 Days)</h3>
-        {upcomingBirthdays.length === 0 && <p>No upcoming birthdays</p>}
         {upcomingBirthdays.map(d => (
           <div key={d.id} className="event-item">
             🎂 {d.name} – {new Date(d.birthday).toLocaleDateString()}
