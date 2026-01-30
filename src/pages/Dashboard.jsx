@@ -99,14 +99,14 @@ function Dashboard() {
     const devotees = devoteesSnap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .filter(d => d.active)
-
+  
     const recordRef = doc(db, "sevaRecords", selectedMonth)
     const recordSnap = await getDoc(recordRef)
     const payments = recordSnap.exists() ? recordSnap.data().payments || {} : {}
-
+  
     const paid = []
     const unpaid = []
-
+  
     devotees.forEach(d => {
       if (payments[d.id]?.status === "paid") {
         paid.push({
@@ -117,28 +117,35 @@ function Dashboard() {
         unpaid.push(d)
       }
     })
-
+  
     setPaidList(paid)
     setUnpaidList(unpaid)
-
-    const expected = devotees.reduce((s, d) => s + Number(d.sevaAmount || 0), 0)
-    const collected = paid.reduce((s, d) => s + Number(d.sevaAmount || 0), 0)
-
+  
+    const expected = devotees.reduce(
+      (sum, d) => sum + Number(d.sevaAmount || 0),
+      0
+    )
+  
+    const collected = paid.reduce(
+      (sum, d) => sum + Number(d.sevaAmount || 0),
+      0
+    )
+  
     setTotalExpected(expected)
     setTotalCollected(collected)
     setTotalPending(expected - collected)
-
+  
     setTopDevotees(
       [...paid].sort((a, b) => b.sevaAmount - a.sevaAmount).slice(0, 5)
     )
-
+  
     if (!recordSnap.exists()) {
       await setDoc(recordRef, { payments: {} })
     }
-  }
+  }  
 
   /* ===============================
-     LOAD ANALYTICS
+     ANALYTICS
   =============================== */
   const loadAnalytics = async () => {
     const months = getLastMonths(6)
@@ -174,42 +181,70 @@ function Dashboard() {
   }, [userRole, selectedMonth])
 
   /* ===============================
-     MARK PAID / UNPAID
+     ACTIONS
   =============================== */
-  const markPaid = async (id, mode) => {
-    const ref = doc(db, "sevaRecords", selectedMonth)
-    const snap = await getDoc(ref)
-    const payments = snap.exists() ? snap.data().payments || {} : {}
-
-    payments[id] = { status: "paid", mode, markedAt: new Date().toISOString() }
-    await setDoc(ref, { payments })
-
-    const devotee = unpaidList.find(d => d.id === id)
-    if (devotee) {
+  const markPaid = async (devoteeId, mode) => {
+    try {
+      const recordRef = doc(db, "sevaRecords", selectedMonth)
+      const recordSnap = await getDoc(recordRef)
+  
+      let payments = {}
+  
+      if (recordSnap.exists()) {
+        payments = recordSnap.data().payments || {}
+      }
+  
+      payments[devoteeId] = {
+        status: "paid",
+        mode,
+        markedAt: new Date().toISOString(),
+      }
+  
+      // ✅ Save payment record
+      await setDoc(recordRef, { payments }, { merge: true })
+  
+      // ✅ Find devotee details
+      const devotee = unpaidList.find(d => d.id === devoteeId)
+      if (!devotee) return
+  
+      // ✅ Save payment history
       await addDoc(collection(db, "paymentHistory"), {
-        devoteeId: id,
+        devoteeId,
         devoteeName: devotee.name,
-        amount: devotee.sevaAmount,
+        amount: Number(devotee.sevaAmount),
         mode,
         month: selectedMonth,
         createdAt: new Date(),
       })
+  
+      // ✅ Refresh dashboard instantly
+      await loadDashboard()
+      await loadAnalytics()
+    } catch (error) {
+      console.error("Payment error:", error)
+      alert("Failed to mark payment")
     }
-
-    loadDashboard()
-    loadAnalytics()
   }
-
-  const markUnpaid = async id => {
-    const ref = doc(db, "sevaRecords", selectedMonth)
-    const snap = await getDoc(ref)
-    if (!snap.exists()) return
-    const payments = snap.data().payments || {}
-    delete payments[id]
-    await setDoc(ref, { payments })
-    loadDashboard()
-    loadAnalytics()
-  }
+  
+  const markUnpaid = async (devoteeId) => {
+    try {
+      const ref = doc(db, "sevaRecords", selectedMonth)
+      const snap = await getDoc(ref)
+  
+      if (!snap.exists()) return
+  
+      const payments = { ...(snap.data().payments || {}) }
+      delete payments[devoteeId]
+  
+      await setDoc(ref, { payments }, { merge: true })
+  
+      await loadDashboard()
+      await loadAnalytics()
+    } catch (err) {
+      console.error("Undo failed", err)
+      alert("Failed to undo payment")
+    }
+  }  
 
   /* ===============================
      EXPORT
@@ -268,8 +303,19 @@ function Dashboard() {
       <div className="section header">
         <h1>Hare Krishna 🙏</h1>
         <p>Nitya Seva Dashboard • {selectedMonth}</p>
-        <small>“Everything belongs to Krishna” — Srila Prabhupada</small>
       </div>
+      
+      <div className="month-selector">
+  <label>Select Month:</label>
+  <select
+    value={selectedMonth}
+    onChange={e => setSelectedMonth(e.target.value)}
+  >
+    {getLastMonths(12).map(m => (
+      <option key={m} value={m}>{m}</option>
+    ))}
+  </select>
+</div>
 
       <div className="section charts">
         <Pie data={pieData} />
@@ -282,15 +328,44 @@ function Dashboard() {
         <div className="card pending">₹{totalPending}<br />Pending</div>
       </div>
 
-      <div className="section">
-        <h3>🌟 Top Contributors</h3>
-        {topDevotees.map(d => (
-          <div key={d.id} className="event-item">
-            {d.name} — ₹{d.sevaAmount}
-          </div>
-        ))}
+      {/* 🔴 PENDING DEVOTEES */}
+      <div className="table-wrap">
+        <h3>⏳ Pending Devotees – {selectedMonth}</h3>
+
+        {unpaidList.length === 0 && <p>All devotees have paid 🙏</p>}
+
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Seva ₹</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {unpaidList.map(d => (
+              <tr key={d.id}>
+                <td>{d.name}</td>
+                <td>₹{d.sevaAmount}</td>
+                <td>
+                  <button className="btn" onClick={() => markPaid(d.id, "cash")}>
+                    Cash
+                  </button>
+                  <button className="btn online" onClick={() => markPaid(d.id, "online")}>
+                    Online
+                  </button>
+                  <button className="btn undo" onClick={() => markUnpaid(d.id)}>
+                    Undo
+                  </button>
+
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
+      {/* ✅ PAID DEVOTEES */}
       <div className="table-wrap">
         <h3>✅ Paid Devotees</h3>
         <button className="btn" onClick={exportPaidToExcel}>
@@ -303,7 +378,6 @@ function Dashboard() {
               <th>Name</th>
               <th>Amount</th>
               <th>Mode</th>
-              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -313,11 +387,6 @@ function Dashboard() {
                 <td>₹{d.sevaAmount}</td>
                 <td className={`badge ${d.paymentMode}`}>
                   {d.paymentMode}
-                </td>
-                <td>
-                  <button className="btn undo" onClick={() => markUnpaid(d.id)}>
-                    Undo
-                  </button>
                 </td>
               </tr>
             ))}
