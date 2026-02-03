@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react"
 import { auth } from "../services/firebase"
 import {
-  getDevotees,
   addDevotee,
   updateDevotee,
   setDevoteeActive,
+  listenToDevotees,
 } from "../services/devotees.service"
 
 import { isBirthdayToday } from "../utils/birthday.utils"
 import { birthdayMessage } from "../utils/whatsappTemplates"
-import { listenToDevotees } from "../services/devotees.service"
 
 import Navbar from "../components/Navbar"
 import ToastContainer from "../components/ToastContainer"
@@ -57,6 +56,9 @@ function Devotees() {
     }
   }, [])
 
+  /* ===============================
+     REALTIME DEVOTEES LIST
+  =============================== */
   useEffect(() => {
     const unsubscribe = listenToDevotees(setDevoteeList)
     return () => unsubscribe()
@@ -71,7 +73,8 @@ function Devotees() {
         addToast(`🎂 Today is ${d.name}'s Birthday`, "success")
       }
     })
-  }, [devoteeList])
+    // eslint-disable-next-line
+  }, [devoteeList.length])
 
   /* ===============================
      ADD / UPDATE
@@ -116,6 +119,7 @@ function Devotees() {
         addToast("Devotee added successfully", "success")
       }
 
+      // Reset
       setEditingId(null)
       setName("")
       setPhone("")
@@ -124,7 +128,6 @@ function Devotees() {
       setBirthday("")
       setAnniversary("")
       setNotes("")
-      fetchDevotees()
     } catch (err) {
       console.error(err)
       addToast("Error saving devotee", "error")
@@ -152,7 +155,6 @@ function Devotees() {
   =============================== */
   const toggleStatus = async (id, active) => {
     await setDevoteeActive(id, active)
-    fetchDevotees()
   }
 
   /* ===============================
@@ -172,6 +174,10 @@ function Devotees() {
     const diff = (b - today) / (1000 * 60 * 60 * 24)
     return diff >= 0 && diff <= 7
   })
+
+  const todaysBirthdays = devoteeList.filter(d =>
+    isBirthdayToday(d.birthday)
+  )
 
   /* ===============================
      RENDER
@@ -214,7 +220,13 @@ function Devotees() {
           <input placeholder="Phone" value={phone} onChange={e => setPhone(e.target.value)} required />
           <input placeholder="WhatsApp" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} />
 
-          <input type="number" placeholder="Seva Amount ₹" value={sevaAmount} onChange={e => setSevaAmount(e.target.value)} required />
+          <input
+            type="number"
+            placeholder="Seva Amount ₹"
+            value={sevaAmount}
+            onChange={e => setSevaAmount(e.target.value)}
+            required
+          />
 
           <label>🎂 Birthday</label>
           <input type="date" value={birthday} onChange={e => setBirthday(e.target.value)} />
@@ -240,35 +252,22 @@ function Devotees() {
       <div className="section">
         <h3>🎂 Today's Birthdays</h3>
 
-        {devoteeList.filter(d => isBirthdayToday(d.birthday)).length === 0 && (
-          <p>No birthdays today</p>
-        )}
+        {todaysBirthdays.length === 0 && <p>No birthdays today</p>}
 
-        <a
-          href={`https://wa.me/91${d.whatsapp || d.phone}?text=${birthdayMessage(d.name)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="whatsapp-btn"
-        >
-          Send Birthday Wish 🎂
-        </a>
+        {todaysBirthdays.map(d => (
+          <div key={d.id} className="event-item">
+            🎉 <strong>{d.name}</strong>
 
-        {devoteeList
-          .filter(d => isBirthdayToday(d.birthday))
-          .map(d => (
-            <div key={d.id} className="event-item">
-              🎉 <strong>{d.name}</strong>
-
-              <a
-                href={`https://wa.me/91${d.whatsapp || d.phone}?text=${birthdayMessage(d.name)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="whatsapp-btn"
-              >
-                Send Birthday Wish 🎂
-              </a>
-            </div>
-          ))}
+            <a
+              href={`https://wa.me/91${d.whatsapp || d.phone}?text=${birthdayMessage(d.name)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="whatsapp-btn"
+            >
+              Send Birthday Wish 🎂
+            </a>
+          </div>
+        ))}
       </div>
 
       {/* UPCOMING */}

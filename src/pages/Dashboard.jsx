@@ -21,6 +21,7 @@ import {
   CategoryScale,
   LinearScale,
   PointElement,
+  Filler,
 } from "chart.js"
 
 import * as XLSX from "xlsx"
@@ -39,8 +40,10 @@ ChartJS.register(
   LineElement,
   CategoryScale,
   LinearScale,
-  PointElement
+  PointElement,
+  Filler
 )
+
 
 /* ===============================
    HELPERS

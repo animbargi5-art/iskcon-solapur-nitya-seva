@@ -1,100 +1,73 @@
 import { useState } from "react"
 import { signInWithEmailAndPassword } from "firebase/auth"
-import { auth } from "../services/firebase"
+import { doc, getDoc } from "firebase/firestore"
+import { auth, db } from "../services/firebase"
 import { useNavigate } from "react-router-dom"
 import "../styles/login.css"
 
 function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [role, setRole] = useState("admin")
+  const [loading, setLoading] = useState(false)
+
   const navigate = useNavigate()
 
   const handleLogin = async (e) => {
     e.preventDefault()
+    setLoading(true)
+
     try {
-      await signInWithEmailAndPassword(auth, email, password)
-      navigate("/dashboard")
+      // 1️⃣ AUTHENTICATE
+      const userCred = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      )
+
+      const uid = userCred.user.uid
+
+      // 2️⃣ FETCH ROLE FROM FIRESTORE
+      const userRef = doc(db, "users", uid)
+      const userSnap = await getDoc(userRef)
+
+      if (!userSnap.exists()) {
+        alert("User role not found. Contact admin.")
+        setLoading(false)
+        return
+      }
+
+      const { role } = userSnap.data()
+
+      // 3️⃣ ROUTE BASED ON ROLE
+      if (role === "admin" || role === "sevak") {
+        navigate("/dashboard")
+      } else {
+        navigate("/dashboard") // later: /devotee-dashboard
+      }
+
     } catch (err) {
       alert(err.message)
     }
+
+    setLoading(false)
   }
 
   return (
     <div className="login-page">
 
-      {/* BACKGROUND IMAGE (SCROLLS) */}
+      {/* BACKGROUND */}
       <div className="login-scroll-bg" />
-
-      {/* SOFT OVERLAY */}
       <div className="login-overlay" />
-
-      {/* LEFT VRINDAVAN STRIP */}
-      <div className="vrindavan-strip left">
-        {[0, 1, 2, 3, 4].map(i => (
-          <div
-            key={`lotus-left-${i}`}
-            className="lotus"
-            style={{
-              left: `${15 + i * 10}px`,
-              top: `${110 + i * 20}%`,
-              animationDelay: `${i * 4}s`
-            }}
-          >
-            {Array.from({ length: 8 }).map((_, j) => (
-              <span key={j}></span>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {/* RIGHT VRINDAVAN STRIP */}
-      <div className="vrindavan-strip right">
-        {[0, 1, 2, 3, 4].map(i => (
-          <div
-            key={`lotus-right-${i}`}
-            className="lotus"
-            style={{
-              left: `${15 + i * 10}px`,
-              top: `${115 + i * 18}%`,
-              animationDelay: `${i * 5}s`
-            }}
-          >
-            {Array.from({ length: 8 }).map((_, j) => (
-              <span key={j}></span>
-            ))}
-          </div>
-        ))}
-      </div>
 
       {/* FIXED CENTER CARD */}
       <div className="login-fixed-center">
         <form className="login-card" onSubmit={handleLogin}>
 
-          <img
-            src="/ISKCON.png"
-            alt="ISKCON"
-            className="login-logo"
-          />
+          <img src="/ISKCON.png" alt="ISKCON" className="login-logo" />
 
           <h2 className="login-title">ISKCON Solapur</h2>
           <p className="login-subtitle">Nitya Seva Portal</p>
 
-          {/* ROLE SWITCH */}
-          <div className="role-switch">
-            {["admin", "sevak", "devotee"].map(r => (
-              <button
-                type="button"
-                key={r}
-                className={role === r ? "active" : ""}
-                onClick={() => setRole(r)}
-              >
-                {r.charAt(0).toUpperCase() + r.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          {/* EMAIL */}
           <div className="input-group">
             <label>Email</label>
             <input
@@ -106,7 +79,6 @@ function Login() {
             />
           </div>
 
-          {/* PASSWORD */}
           <div className="input-group">
             <label>Password</label>
             <input
@@ -118,8 +90,8 @@ function Login() {
             />
           </div>
 
-          <button type="submit" className="login-btn">
-            Enter Seva Portal
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? "Signing in..." : "Enter Seva Portal"}
           </button>
 
           <span className="login-quote">
